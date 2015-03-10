@@ -146,7 +146,7 @@ nv.models.scatter = function() {
 
       wrap.select('#nv-edge-clip-' + id + ' rect')
           .attr('width', availableWidth)
-          .attr('height', availableHeight);
+          .attr('height', (availableHeight > 0) ? availableHeight : 0);
 
       g   .attr('clip-path', clipEdge ? 'url(#nv-edge-clip-' + id + ')' : '');
 
@@ -467,7 +467,13 @@ nv.models.scatter = function() {
   //------------------------------------------------------------
 
   chart.dispatch = dispatch;
-  chart.options = nv.utils.optionsFunc.bind(chart);
+
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
 
   chart.x = function(_) {
     if (!arguments.length) return getX;

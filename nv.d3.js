@@ -477,7 +477,13 @@ window.nv.tooltip.* also has various helper methods.
                 .html(function(p) {return p.key});
             trowEnter.append("td")
                 .classed("value",true)
-                .html(function(p,i) { return valueFormatter(p.value,i) });
+                .html(function (p, i) {
+                    if (p.value != null) {
+                        return valueFormatter(p.value, i)
+                    } else {
+                        return 'NaN'
+                    }
+                });
 
 
             trowEnter.selectAll("td").each(function(p) {
@@ -499,8 +505,10 @@ window.nv.tooltip.* also has various helper methods.
         };
 
         var dataSeriesExists = function(d) {
-            if (d && d.series && d.series.length > 0) return true;
-
+            if (d && d.series && d.series.length > 0) {
+                if (d.series[0].value != null)
+                    return true;
+            };
             return false;
         };
 
@@ -552,7 +560,10 @@ window.nv.tooltip.* also has various helper methods.
         //Draw the tooltip onto the DOM.
         function nvtooltip() {
             if (!enabled) return;
-            if (!dataSeriesExists(data)) return;
+            if (!dataSeriesExists(data)) {
+                nv.tooltip.cleanup();
+                return;
+            }
 
             convertViewBoxRatio();
 
@@ -1336,7 +1347,12 @@ nv.utils.optionsFunc = function(args) {
   d3.rebind(chart, axis, 'orient', 'tickValues', 'tickSubdivide', 'tickSize', 'tickPadding', 'tickFormat');
   d3.rebind(chart, scale, 'domain', 'range', 'rangeBand', 'rangeBands'); //these are also accessible by chart.scale(), but added common ones directly for ease of use
 
-  chart.options = nv.utils.optionsFunc.bind(chart);
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
 
   chart.margin = function(_) {
     if(!arguments.length) return margin;
@@ -4908,7 +4924,7 @@ nv.models.indentedTree = function() {
                 data.forEach(function(series) {
                    series.disabled = true;
                 });
-                d.disabled = false; 
+                d.disabled = false;
                 dispatch.stateChange({
                     disabled: data.map(function(d) { return !!d.disabled })
                 });
@@ -4941,12 +4957,14 @@ nv.models.indentedTree = function() {
               var legendText = d3.select(this).select('text');
               var nodeTextLength;
               try {
-                nodeTextLength = legendText.node().getComputedTextLength();
+                nodeTextLength = legendText.getComputedTextLength();
+                // If the legendText is display:none'd (nodeTextLength == 0), simulate an error so we approximate, instead
+                if(nodeTextLength <= 0) throw Error();
               }
               catch(e) {
                 nodeTextLength = nv.utils.calcApproxTextWidth(legendText);
               }
-             
+
               seriesWidths.push(nodeTextLength + 28); // 28 is ~ the width of the circle plus some padding
             });
 
@@ -5036,8 +5054,14 @@ nv.models.indentedTree = function() {
   //------------------------------------------------------------
 
   chart.dispatch = dispatch;
-  chart.options = nv.utils.optionsFunc.bind(chart);
-  
+
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
+
   chart.margin = function(_) {
     if (!arguments.length) return margin;
     margin.top    = typeof _.top    != 'undefined' ? _.top    : margin.top;
@@ -5196,7 +5220,7 @@ nv.models.line = function() {
 
       wrap.select('#nv-edge-clip-' + scatter.id() + ' rect')
           .attr('width', availableWidth)
-          .attr('height', availableHeight);
+          .attr('height', (availableHeight > 0) ? availableHeight : 0);
 
       g   .attr('clip-path', clipEdge ? 'url(#nv-edge-clip-' + scatter.id() + ')' : '');
       scatterWrap
@@ -5301,7 +5325,12 @@ nv.models.line = function() {
   d3.rebind(chart, scatter, 'id', 'interactive', 'size', 'xScale', 'yScale', 'zScale', 'xDomain', 'yDomain', 'xRange', 'yRange',
     'sizeDomain', 'forceX', 'forceY', 'forceSize', 'clipVoronoi', 'useVoronoi', 'clipRadius', 'padData','highlightPoint','clearHighlights');
 
-  chart.options = nv.utils.optionsFunc.bind(chart);
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
 
   chart.margin = function(_) {
     if (!arguments.length) return margin;
@@ -5406,7 +5435,7 @@ nv.models.lineChart = function() {
     , y
     , state = {}
     , defaultState = null
-    , noData = 'No Data Available.'
+    , noData = 'keine Daten vorhanden'
     , dispatch = d3.dispatch('tooltipShow', 'tooltipHide', 'stateChange', 'changeState')
     , transitionDuration = 250
     ;
@@ -5456,7 +5485,7 @@ nv.models.lineChart = function() {
       //set state.disabled
       state.disabled = data.map(function(d) { return !!d.disabled });
 
-    
+
       if (!defaultState) {
         var key;
         defaultState = {};
@@ -5515,7 +5544,9 @@ nv.models.lineChart = function() {
       gEnter.append('g').attr('class', 'nv-legendWrap');
       gEnter.append('g').attr('class', 'nv-interactive');
 
-      g.select("rect").attr("width",availableWidth).attr("height",availableHeight);
+      g.select("rect")
+        .attr("width",availableWidth)
+        .attr("height",(availableHeight > 0) ? availableHeight : 0);
       //------------------------------------------------------------
       // Legend
 
@@ -5548,7 +5579,7 @@ nv.models.lineChart = function() {
       //------------------------------------------------------------
       // Main Chart Component(s)
 
-      
+
       //------------------------------------------------------------
       //Set up interactive layer
       if (useInteractiveGuideline) {
@@ -5621,9 +5652,9 @@ nv.models.lineChart = function() {
           lines.clearHighlights();
           var singlePoint, pointIndex, pointXLocation, allData = [];
           data
-          .filter(function(series, i) { 
+          .filter(function(series, i) {
             series.seriesIndex = i;
-            return !series.disabled; 
+            return !series.disabled;
           })
           .forEach(function(series,i) {
               pointIndex = nv.interactiveBisect(series.values, e.pointXValue, chart.x());
@@ -5679,7 +5710,7 @@ nv.models.lineChart = function() {
 
       dispatch.on('changeState', function(e) {
 
-        if (typeof e.disabled !== 'undefined') {
+        if (typeof e.disabled !== 'undefined' && data.length === e.disabled.length) {
           data.forEach(function(series,i) {
             series.disabled = e.disabled[i];
           });
@@ -5733,7 +5764,12 @@ nv.models.lineChart = function() {
   d3.rebind(chart, lines, 'defined', 'isArea', 'x', 'y', 'size', 'xScale', 'yScale', 'xDomain', 'yDomain', 'xRange', 'yRange'
     , 'forceX', 'forceY', 'interactive', 'clipEdge', 'clipVoronoi', 'useVoronoi','id', 'interpolate');
 
-  chart.options = nv.utils.optionsFunc.bind(chart);
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
 
   chart.margin = function(_) {
     if (!arguments.length) return margin;
@@ -9773,7 +9809,13 @@ nv.models.multiChart = function() {
   chart.xAxis = xAxis;
   chart.yAxis1 = yAxis1;
   chart.yAxis2 = yAxis2;
-  chart.options = nv.utils.optionsFunc.bind(chart);
+
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
 
   chart.x = function(_) {
     if (!arguments.length) return getX;
@@ -11078,7 +11120,7 @@ nv.models.scatter = function() {
 
       wrap.select('#nv-edge-clip-' + id + ' rect')
           .attr('width', availableWidth)
-          .attr('height', availableHeight);
+          .attr('height', (availableHeight > 0) ? availableHeight : 0);
 
       g   .attr('clip-path', clipEdge ? 'url(#nv-edge-clip-' + id + ')' : '');
 
@@ -11399,7 +11441,13 @@ nv.models.scatter = function() {
   //------------------------------------------------------------
 
   chart.dispatch = dispatch;
-  chart.options = nv.utils.optionsFunc.bind(chart);
+
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
 
   chart.x = function(_) {
     if (!arguments.length) return getX;

@@ -374,7 +374,13 @@ nv.models.multiChart = function() {
   chart.xAxis = xAxis;
   chart.yAxis1 = yAxis1;
   chart.yAxis2 = yAxis2;
-  chart.options = nv.utils.optionsFunc.bind(chart);
+
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
 
   chart.x = function(_) {
     if (!arguments.length) return getX;

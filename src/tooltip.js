@@ -101,7 +101,13 @@ window.nv.tooltip.* also has various helper methods.
                 .html(function(p) {return p.key});
             trowEnter.append("td")
                 .classed("value",true)
-                .html(function(p,i) { return valueFormatter(p.value,i) });
+                .html(function (p, i) {
+                    if (p.value != null) {
+                        return valueFormatter(p.value, i)
+                    } else {
+                        return 'NaN'
+                    }
+                });
 
 
             trowEnter.selectAll("td").each(function(p) {
@@ -123,8 +129,10 @@ window.nv.tooltip.* also has various helper methods.
         };
 
         var dataSeriesExists = function(d) {
-            if (d && d.series && d.series.length > 0) return true;
-
+            if (d && d.series && d.series.length > 0) {
+                if (d.series[0].value != null)
+                    return true;
+            };
             return false;
         };
 
@@ -176,7 +184,10 @@ window.nv.tooltip.* also has various helper methods.
         //Draw the tooltip onto the DOM.
         function nvtooltip() {
             if (!enabled) return;
-            if (!dataSeriesExists(data)) return;
+            if (!dataSeriesExists(data)) {
+                nv.tooltip.cleanup();
+                return;
+            }
 
             convertViewBoxRatio();
 

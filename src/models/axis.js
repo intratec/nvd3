@@ -318,7 +318,12 @@ nv.models.axis = function() {
   d3.rebind(chart, axis, 'orient', 'tickValues', 'tickSubdivide', 'tickSize', 'tickPadding', 'tickFormat');
   d3.rebind(chart, scale, 'domain', 'range', 'rangeBand', 'rangeBands'); //these are also accessible by chart.scale(), but added common ones directly for ease of use
 
-  chart.options = nv.utils.optionsFunc.bind(chart);
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
 
   chart.margin = function(_) {
     if(!arguments.length) return margin;

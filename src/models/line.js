@@ -94,7 +94,7 @@ nv.models.line = function() {
 
       wrap.select('#nv-edge-clip-' + scatter.id() + ' rect')
           .attr('width', availableWidth)
-          .attr('height', availableHeight);
+          .attr('height', (availableHeight > 0) ? availableHeight : 0);
 
       g   .attr('clip-path', clipEdge ? 'url(#nv-edge-clip-' + scatter.id() + ')' : '');
       scatterWrap
@@ -199,7 +199,12 @@ nv.models.line = function() {
   d3.rebind(chart, scatter, 'id', 'interactive', 'size', 'xScale', 'yScale', 'zScale', 'xDomain', 'yDomain', 'xRange', 'yRange',
     'sizeDomain', 'forceX', 'forceY', 'forceSize', 'clipVoronoi', 'useVoronoi', 'clipRadius', 'padData','highlightPoint','clearHighlights');
 
-  chart.options = nv.utils.optionsFunc.bind(chart);
+    //IMPORTANT: function is causing javascript TypeError -> Safari doesn't work   
+    //chart.options = nv.utils.optionsFunc.bind(chart);
+    try {
+        chart.options = nv.utils.optionsFunc.bind(chart);
+    }
+    catch (e) { };
 
   chart.margin = function(_) {
     if (!arguments.length) return margin;
